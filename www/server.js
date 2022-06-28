@@ -35,27 +35,19 @@ const util_1 = require("./util/util");
     // RETURNS
     //   the filtered image file [!!TIP res.sendFile(filteredpath); might be useful]
     /**************************************************************************** */
-    app.get("/filteredimage", (req, res) => {
-        let { image_url } = req.query;
+    app.get("/filteredimage", (req, res) => __awaiter(this, void 0, void 0, function* () {
+        const { image_url } = req.query;
         if (!image_url) {
             return res.status(400).send('Image Url is required!');
         }
-        util_1.filterImageFromURL(image_url).then(image => {
-            // image is filtered
-            res.status(200).sendFile(image, function (err) {
-                if (!err) {
-                    let files = [image];
-                    util_1.deleteLocalFiles(files);
-                }
-            });
-        })
-            .catch(err => {
-            // Handle an exception.
-            return res.status(400).send({
-                err
-            });
-        });
-    });
+        const filteredImagePath = yield util_1.filterImageFromURL(image_url);
+        res.status(200).sendFile(filteredImagePath, (error) => __awaiter(this, void 0, void 0, function* () {
+            if (error) {
+                res.status(400).send(error);
+            }
+            return yield util_1.deleteLocalFiles([filteredImagePath]);
+        }));
+    }));
     //! END @TODO1
     // Root Endpoint
     // Displays a simple message to the user

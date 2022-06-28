@@ -1,6 +1,6 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import bodyParser from 'body-parser';
-import {filterImageFromURL, deleteLocalFiles} from './util/util';
+import { filterImageFromURL, deleteLocalFiles } from './util/util';
 
 (async () => {
 
@@ -9,7 +9,7 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
 
   // Set the network port
   const port = process.env.PORT || 8082;
-  
+
   // Use the body parser middleware for post requests
   app.use(bodyParser.json());
 
@@ -28,47 +28,35 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
   //   the filtered image file [!!TIP res.sendFile(filteredpath); might be useful]
 
   /**************************************************************************** */
-  app.get( "/filteredimage", ( req, res ) => {
-    
-    let {image_url} = req.query;
+  app.get("/filteredimage", async (req: Request, res: Response) => {
 
-    if(!image_url){
-     return res.status(400).send('Image Url is required!'); 
+    const { image_url }: { image_url: string } = req.query;
 
+    if (!image_url) {
+      return res.status(400).send('Image Url is required!');
     }
-    filterImageFromURL(image_url).then(image => {
-      // image is filtered
-      res.status(200).sendFile(image, function (err) {
-        if(!err){
-          let files: Array<string> = [image];
-          deleteLocalFiles(files);
-        }
+    const filteredImagePath = await filterImageFromURL(image_url);
 
-      });
-
-      
-    })
-    .catch(err => {
-      // Handle an exception.
-      return res.status(400).send({
-        err
-      });
+    res.status(200).sendFile(filteredImagePath, async (error) => {
+      if (error) { res.status(400).send(error) }
+      return await deleteLocalFiles([filteredImagePath]);
     });
+  });
 
 
-  } );
+
   //! END @TODO1
-  
+
   // Root Endpoint
   // Displays a simple message to the user
-  app.get( "/", async ( req, res ) => {
+  app.get("/", async (req, res) => {
     res.send("try GET /filteredimage?image_url={{}}")
-  } );
-  
+  });
+
 
   // Start the Server
-  app.listen( port, () => {
-      console.log( `server running http://localhost:${ port }` );
-      console.log( `press CTRL+C to stop server` );
-  } );
+  app.listen(port, () => {
+    console.log(`server running http://localhost:${port}`);
+    console.log(`press CTRL+C to stop server`);
+  });
 })();
